@@ -1,122 +1,67 @@
-📘 Expense Tracker – SvelteKit + Spring Boot + PostgreSQL
+# 📘 Expense Tracker – SvelteKit + Spring Boot + PostgreSQL
 
 Aplikasi pencatatan keuangan harian (Expense Tracker) yang memungkinkan pengguna mengelola pemasukan, pengeluaran, kategori, dan melihat ringkasan keuangan secara real-time.
-Dibangun menggunakan arsitektur modern: SvelteKit (TypeScript + TailwindCSS) untuk frontend, Spring Boot 3 (JWT Security) untuk backend, dan PostgreSQL sebagai database.
+Dibangun menggunakan arsitektur modern: **SvelteKit (TypeScript + TailwindCSS)** untuk frontend, **Spring Boot 3 (JWT Security)** untuk backend, dan **PostgreSQL** sebagai database.
 
-⭐ Fitur Utama
-🔐 Authentication
+## ⭐ Fitur Utama
 
-Login & Registrasi
+### 🔐 Authentication
+- Login & Registrasi
+- JWT-based Authentication
+- Proteksi halaman (dashboard, kategori, transaksi)
+- Redirect otomatis setelah login/logout
 
-JWT-based Authentication
+### 🏷️ Kategori
+- Tambah, edit, hapus kategori
+- Dua tipe: **INCOME** / **EXPENSE**
+- Filtering kategori pada transaksi
+- Pagination + Sorting
 
-Proteksi halaman (dashboard, kategori, transaksi)
+### 💰 Transaksi
+- CRUD transaksi lengkap
+- Filtering: tanggal, tipe, kategori
+- Modal popup untuk create/edit
+- Pagination server-side
+- Sorting server-side
 
-Redirect otomatis setelah login/logout
+### 📊 Dashboard
+- Total pemasukan
+- Total pengeluaran
+- Saldo akhir
+- Tabel transaksi terbaru
 
-🏷️ Kategori
+### 📄 Export / Import
+- Export Excel
+- Export PDF
+- Import Excel
+- Template import Excel
 
-Tambah, edit, hapus kategori
+### 🎨 UI/UX
+- Sidebar layout
+- Responsive design
+- TailwindCSS
 
-Dua tipe: INCOME / EXPENSE
+## 🚀 Tech Stack
 
-Filtering kategori pada transaksi
+### Frontend
+- SvelteKit (latest)
+- TypeScript
+- TailwindCSS
 
-Pagination + Sorting
+### Backend
+- Spring Boot 3.x
+- Spring Security (JWT)
+- PostgreSQL
+- Lombok
+- Apache POI (Excel)
+- OpenPDF / iTextPDF (PDF Export)
 
-💰 Transaksi
+### Database
+- PostgreSQL 16+
 
-CRUD transaksi lengkap
+## 📂 Project Structure
 
-Filtering: tanggal, tipe, kategori
-
-Modal popup untuk create/edit
-
-Pagination server-side
-
-Sorting server-side
-
-📊 Dashboard
-
-Total pemasukan
-
-Total pengeluaran
-
-Saldo akhir
-
-Tabel transaksi terbaru
-
-(opsional) grafik bulanan
-
-📄 Export / Import
-
-Export Excel
-
-Export PDF
-
-Import Excel (mapping by categoryId)
-
-Template import Excel
-
-🎨 UI/UX
-
-Sidebar layout
-
-Responsive design
-
-TailwindCSS
-
-Halaman login tanpa sidebar
-
-🚀 Tech Stack
-Frontend
-
-SvelteKit (latest)
-
-TypeScript
-
-TailwindCSS
-
-LocalStorage-based Auth
-
-Modal UI components
-
-Backend
-
-Spring Boot 3.x
-
-Spring Web
-
-Spring Security (JWT)
-
-PostgreSQL Driver
-
-Lombok
-
-Apache POI (Excel)
-
-OpenPDF / iTextPDF (PDF Export)
-
-Database
-
-PostgreSQL 16+
-
-📂 Project Structure
-Frontend
-src/
- ├─ lib/
- │   ├─ stores/auth.ts
- │   ├─ config.ts
- │   └─ utils/
- ├─ routes/
- │   ├─ login/+page.svelte
- │   ├─ dashboard/+page.svelte
- │   ├─ categories/+page.svelte
- │   └─ transactions/+page.svelte
- ├─ routes/+layout.svelte
- └─ app.css
-
-Backend
+### Backend
 src/main/java/com/expense/
  ├─ config/
  ├─ controller/
@@ -124,10 +69,18 @@ src/main/java/com/expense/
  ├─ repository/
  ├─ dto/
  ├─ model/
- ├─ util/ (JWT Utils)
+ ├─ util/
  └─ ExpenseTrackerApplication.java
 
-🗄️ Database Schema (DDL)
+### Frontend
+src/
+ ├─ lib/
+ ├─ routes/
+ ├─ app.css
+ └─ app.html
+
+## 🗄️ Database Schema (DDL)
+
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100),
@@ -152,111 +105,20 @@ CREATE TABLE transactions (
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
 );
 
-🔧 Instalasi & Setup
-1️⃣ Backend
+## 🔧 Instalasi & Setup
 
-Clone project:
-
-git clone <url-backend-repository>
-
-
-Edit konfigurasi database:
-
-src/main/resources/application.properties
-
-spring.datasource.url=jdbc:postgresql://localhost:5432/expense_db
-spring.datasource.username=postgres
-spring.datasource.password=yourpassword
-spring.jpa.hibernate.ddl-auto=update
-
-
-Jalankan:
-
+### Backend
 mvn spring-boot:run
 
-2️⃣ Frontend
-
-Clone project:
-
-git clone <url-frontend-repository>
-
-
-Install dependencies:
-
+### Frontend
 npm install
-
-
-Jalankan:
-
 npm run dev
 
+## 🔐 Authentication Flow
+1. Login → backend generate JWT  
+2. Token disimpan di localStorage  
+3. Authorization header: Bearer <token>  
+4. Backend validasi JWT
 
-Konfigurasi API:
-
-src/lib/config.ts
-
-export const API_BASE_URL = "http://localhost:8080/api";
-
-🔐 Authentication Flow
-
-User login → backend generate JWT
-
-Frontend simpan token + user di localStorage
-
-Token dipakai untuk semua request:
-
-Authorization: Bearer <token>
-
-
-Backend validasi token → user authorized
-
-Route yang membutuhkan login otomatis terproteksi
-
-📁 API Docs (Ringkas)
-AUTH
-POST /auth/register
-POST /auth/login
-
-CATEGORY
-GET    /categories?userId=X
-POST   /categories
-PUT    /categories/{id}
-DELETE /categories/{id}
-
-TRANSACTION
-GET    /transactions?userId=X&page=0&size=10&sortBy=date&sortDir=desc
-POST   /transactions
-PUT    /transactions/{id}
-DELETE /transactions/{id}
-
-GET    /transactions/export/excel
-GET    /transactions/export/pdf
-POST   /transactions/import/excel
-GET    /transactions/import/template
-
-📦 Import/Export Format
-Template Import Excel
-amount | type | date | description | categoryId
-
-Export
-
-transactions.xlsx
-
-transactions.pdf
-
-🎯 Future Improvements
-
-Grafik interaktif (ApexCharts)
-
-Multi-user role
-
-Budget planning module
-
-Monthly report auto-generation
-
-Recurring transactions
-
-👨‍💻 Author
-
+## 👨‍💻 Author
 Bayu Widia Santoso
-Fullstack Developer – Spring Boot, SvelteKit, PostgreSQL
