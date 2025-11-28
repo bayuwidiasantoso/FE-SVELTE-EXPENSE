@@ -2,8 +2,6 @@
   import { onMount } from 'svelte';
   import { API_BASE_URL } from '$lib/config';
   import { auth } from '$lib/stores/auth';
-  import { get } from 'svelte/store';
-
 
   type TransactionType = 'INCOME' | 'EXPENSE';
 
@@ -32,23 +30,24 @@
     };
   }
 
+  // AUTH
   let userId: number | null = null;
   let token: string | null = null;
   let headers: HeadersInit = { 'Content-Type': 'application/json' };
 
-  // reaktif ke perubahan store auth
   $: authState = $auth;
-
-  // setiap kali auth berubah, update userId & token
   $: userId = authState?.user?.id ?? null;
   $: token = authState?.token ?? null;
 
-  // headers juga ikut update ketika token berubah
   $: headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {})
   };
 
+  // DEBUG (sementara)
+  $: console.log('[dashboard] authState =', authState);
+  $: console.log('[dashboard] userId =', userId);
+  $: console.log('[dashboard] token =', token);
 
   let categories: Category[] = [];
   let transactions: Transaction[] = [];
@@ -66,14 +65,24 @@
   }
 
   async function loadCategories() {
-    if (!userId) return;
+    if (!userId || !token) {
+      console.warn('[dashboard] skip loadCategories, userId/token kosong');
+      return;
+    }
+
     loadingCategories = true;
     errorMessage = '';
+
     try {
-      const res = await fetch(`${API_BASE_URL}/categories?userId=${userId}`, {headers});
+      const res = await fetch(`${API_BASE_URL}/categories?userId=${userId}`, { headers });
+      console.log('[dashboard] GET /categories status =', res.status);
+
       if (!res.ok) {
+        const text = await res.text();
+        console.error('[dashboard] categories error body =', text);
         throw new Error('Gagal mengambil kategori');
       }
+
       const data: Category[] = await res.json();
       categories = data;
     } catch (err: unknown) {
@@ -85,20 +94,41 @@
   }
 
   async function loadTransactions() {
-    if (!userId) return;
+    if (!userId || !token) {
+      console.warn('[dashboard] skip loadTransactions, userId/token kosong');
+      return;
+    }
+
     loadingTransactions = true;
     errorMessage = '';
 
     try {
-      const res = await fetch(`${API_BASE_URL}/transactions?userId=${userId}`, {headers});
-      if (!res.ok) {
+      // kalau backend kamu pakai paging di /transactions, pakai page=0 size=20 misalnya
+      const params = new URLSearchParams();
+      params.set('userId', String(userId));
+      params.set('page', '0');
+      params.set('size', '20');
+      params.set('sortBy', 'date');
+      params.set('sortDir', 'desc');
 
+      const res = await fetch(`${API_BASE_URL}/transactions?${params.toString()}`, { headers });
+      console.log('[dashboard] GET /transactions status =', res.status);
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('[dashboard] transactions error body =', text);
         throw new Error('Gagal mengambil transaksi');
       }
-      const data: Transaction[] = await res.json();
-      // sort terbaru dulu
-      data.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-      transactions = data;
+
+      const raw = await res.json();
+      console.log('[dashboard] transactions raw =', raw);
+
+      // kalau backend balikin Page<Transaction>, ambil content-nya
+      const list: Transaction[] = Array.isArray(raw) ? raw : raw.content ?? [];
+
+      // sort terbaru dulu (kalau belum di-sort dari server)
+      list.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+      transactions = list;
     } catch (err: unknown) {
       console.error(err);
       errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan';
@@ -107,6 +137,7 @@
     }
   }
 
+  // hitung ringkasan
   $: totalIncome =
     transactions
       .filter((t) => t.type === 'INCOME')
@@ -119,9 +150,17 @@
 
   $: balance = totalIncome - totalExpense;
 
-  onMount(async () => {
-    await loadCategories();
-    await loadTransactions();
+  // pastikan hanya load sekali setelah userId/token siap
+  let initialized = false;
+  $: if (!initialized && userId && token) {
+    initialized = true;
+    console.log('[dashboard] init load data...');
+    loadCategories();
+    loadTransactions();
+  }
+
+  onMount(() => {
+    console.log('[dashboard] mounted');
   });
 </script>
 
